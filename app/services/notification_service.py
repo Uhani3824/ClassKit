@@ -56,14 +56,27 @@ class NotificationService:
 
     @staticmethod
     def mark_as_read(db: Session, user_id: int, notification_id: int):
+        # 1. Update DB
         db_notif = db.query(models.Notification).filter(
             models.Notification.id == notification_id,
             models.Notification.user_id == user_id
         ).first()
+        
         if db_notif:
             db_notif.is_read = True
             db.commit()
-            # Clear redis list or update? 
-            # For simplicity, we can clear the redis list when user views them
-            redis_client.delete(f"user:{user_id}:notifications")
+            
+            # 2. Update Redis: Filter out the read notification
+            redis_key = f"user:{user_id}:notifications"
+            current_notifs = redis_client.lrange(redis_key, 0, -1)
+            redis_client.delete(redis_key)
+            
+            for n_str in current_notifs:
+                try:
+                    n_json = json.loads(n_str)
+                    if n_json.get("id") != notification_id:
+                        redis_client.rpush(redis_key, n_str)
+                except:
+                    continue
+                    
         return True

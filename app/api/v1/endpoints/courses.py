@@ -95,3 +95,49 @@ def get_course(
         raise HTTPException(status_code=403, detail="Not authorized to view this course")
     
     return course
+
+@router.delete("/{course_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_course(
+    course_id: int,
+    db: Session = Depends(database.get_db),
+    current_user: models.User = Depends(get_current_user)
+):
+    """
+    Delete a course. Only the teacher who created it can delete it.
+    This cascade deletes enrollments, assignments, posts etc.
+    """
+    course = db.query(models.Course).filter(models.Course.id == course_id).first()
+    if not course:
+        raise HTTPException(status_code=404, detail="Course not found")
+    
+    if current_user.role != "teacher" or course.teacher_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not authorized to delete this course")
+    
+    db.delete(course)
+    db.commit()
+    return None
+
+@router.post("/{course_id}/unenroll", status_code=status.HTTP_204_NO_CONTENT)
+def unenroll_course(
+    course_id: int,
+    db: Session = Depends(database.get_db),
+    current_user: models.User = Depends(get_current_user)
+):
+    """
+    Unenroll from a course. Only students can unenroll.
+    Data (submissions, posts) remains.
+    """
+    if current_user.role != "student":
+        raise HTTPException(status_code=403, detail="Only students can unenroll")
+        
+    enrollment = db.query(models.CourseEnrollment).filter(
+        models.CourseEnrollment.course_id == course_id,
+        models.CourseEnrollment.user_id == current_user.id
+    ).first()
+    
+    if not enrollment:
+        raise HTTPException(status_code=404, detail="Not enrolled in this course")
+        
+    db.delete(enrollment)
+    db.commit()
+    return None

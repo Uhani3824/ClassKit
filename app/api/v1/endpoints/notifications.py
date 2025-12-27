@@ -32,4 +32,9 @@ def clear_all(
         models.Notification.is_read == False
     ).update({"is_read": True})
     db.commit()
+    
+    # Clear Redis cache
+    from app.core.redis_db import redis_client
+    redis_client.delete(f"user:{current_user.id}:notifications")
+    
     return {"message": "All notifications cleared"}
