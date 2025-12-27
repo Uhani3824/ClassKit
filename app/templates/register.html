@@ -53,7 +53,11 @@
         });
 
         if (response.ok) {
-            window.location.href = '/login';
+            const result = await response.json();
+            alert(result.message || 'Registration successful! Please check your email to verify your account.');
+            document.getElementById('register-form').reset();
+            // Optional: Redirect to login after a delay or let them read the alert
+            // window.location.href = '/login'; 
         } else {
             const err = await response.json();
             alert(err.detail || 'Registration failed');

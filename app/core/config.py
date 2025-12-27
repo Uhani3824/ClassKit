@@ -36,6 +36,14 @@ class Settings(BaseSettings):
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     
+    # Email (SMTP)
+    MAIL_USERNAME: str = "apikey" # Default for SendGrid etc, or blank
+    MAIL_PASSWORD: str = ""
+    MAIL_FROM: str = "noreply@classkit.com"
+    MAIL_PORT: int = 587
+    MAIL_SERVER: str = "smtp.gmail.com"
+    MAIL_FROM_NAME: str = "Class-Kit Support"
+    
     class Config:
         env_file = ".env"
 
