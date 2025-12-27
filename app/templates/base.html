@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Class-Kit{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', path='/css/styles.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+    {% block extra_head %}{% endblock %}
+</head>
+
+<body>
+    <header>
+        <a href="/" class="logo">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <path d="M22 10v6M2 10l10-5 10 5-10 5z" />
+                <path d="M6 12v5c3 3 9 3 12 0v-5" />
+            </svg>
+            Class-Kit
+        </a>
+        <nav style="display: flex; align-items: center; gap: 1rem;">
+            {% if user %}
+            <div id="notif-wrapper" style="position: relative; cursor: pointer;">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+                    <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+                </svg>
+                <span id="notif-badge"
+                    style="display: none; position: absolute; top: -5px; right: -5px; background: red; color: white; border-radius: 50%; width: 15px; height: 15px; font-size: 10px; display: flex; align-items: center; justify-content: center;">0</span>
+                <div id="notif-dropdown"
+                    style="display: none; position: absolute; top: 30px; right: 0; width: 300px; background: white; box-shadow: var(--shadow); border-radius: var(--radius); z-index: 3000; max-height: 400px; overflow-y: auto; padding: 1rem;">
+                    <h4
+                        style="margin-bottom: 0.5rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem;">
+                        Notifications</h4>
+                    <div id="notif-list" style="font-size: 0.9rem;"></div>
+                </div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 0.75rem;">
+                <a href="/profile" style="text-decoration: none;">
+                    <div
+                        style="width: 36px; height: 36px; border-radius: 50%; overflow: hidden; background: var(--border-color); cursor: pointer;">
+                        {% if user.profile_picture_url %}
+                        <img src="{{ user.profile_picture_url }}" alt="{{ user.name }}"
+                            style="width: 100%; height: 100%; object-fit: cover;">
+                        {% else %}
+                        <div
+                            style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 1rem; font-weight: 700; color: white; background: linear-gradient(135deg, var(--primary-color), var(--accent-color));">
+                            {{ user.name[0].upper() }}
+                        </div>
+                        {% endif %}
+                    </div>
+                </a>
+                <span style="color: var(--text-secondary); font-size: 0.9rem;">{{ user.name }}</span>
+            </div>
+            <a href="/logout" class="btn btn-outline">Logout</a>
+            {% else %}
+            <a href="/login" style="margin-right: 1rem; color: var(--text-secondary); text-decoration: none;">Login</a>
+            <a href="/register" class="btn btn-primary">Sign Up</a>
+            {% endif %}
+        </nav>
+    </header>
+
+    <main class="container">
+        {% block content %}{% endblock %}
+    </main>
+
+    {% block extra_scripts %}{% endblock %}
+
+    <script>
+        const authToken = localStorage.getItem('token');
+        if (authToken) {
+            async function pollNotifications() {
+                try {
+                    const res = await fetch('/api/v1/notifications/unread', {
+                        headers: { 'Authorization': `Bearer ${authToken}` }
+                    });
+                    if (res.ok) {
+                        const notifs = await res.json();
+                        const badge = document.getElementById('notif-badge');
+                        const list = document.getElementById('notif-list');
+
+                        if (notifs.length > 0) {
+                            badge.style.display = 'flex';
+                            badge.innerText = notifs.length;
+                            list.innerHTML = `
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                                    <span style="font-weight: 600;">Notifications</span>
+                                    <button onclick="clearAllNotifications()" style="background: none; border: none; color: var(--primary-color); cursor: pointer; font-size: 0.85rem; padding: 0.25rem 0.5rem;">Clear All</button>
+                                </div>
+                            ` + notifs.map(n => {
+                                // Determine the URL based on notification type and metadata
+                                let url = '#';
+                                const meta = n.metadata || {};
+
+                                if (n.type === 'assignment_created' && meta.course_id && meta.assignment_id) {
+                                    url = `/courses/${meta.course_id}/assignments/${meta.assignment_id}`;
+                                } else if (n.type === 'assignment_submitted' && meta.course_id && meta.assignment_id) {
+                                    url = `/courses/${meta.course_id}/assignments/${meta.assignment_id}/submissions`;
+                                } else if (n.type === 'grade_given' && meta.course_id && meta.assignment_id) {
+                                    url = `/courses/${meta.course_id}/assignments/${meta.assignment_id}`;
+                                } else if ((n.type === 'announcement_created' || n.type === 'post_created') && meta.course_id) {
+                                    url = `/courses/${meta.course_id}`;
+                                }
+
+                                return `
+                                    <a href="${url}" onclick="clearNotification(${n.id})" style="text-decoration: none; color: inherit; display: block; padding: 0.5rem; border-bottom: 1px solid #eee; cursor: pointer; transition: background 0.2s;" onmouseover="this.style.background='#f5f5f5'" onmouseout="this.style.background='transparent'">
+                                        <strong style="color: var(--primary-color);">${n.type.replace(/_/g, ' ').toUpperCase()}</strong><br>
+                                        <span style="font-size: 0.85rem; color: #666;">${n.message || 'New activity in class'}</span>
+                                    </a>
+                                `;
+                            }).join('');
+                        } else {
+                            badge.style.display = 'none';
+                            list.innerHTML = '<p style="color: #888;">No new notifications</p>';
+                        }
+                    }
+                } catch (e) { }
+            }
+
+            setInterval(pollNotifications, 10000); // 10s poll
+            pollNotifications();
+
+            const wrapper = document.getElementById('notif-wrapper');
+            const dropdown = document.getElementById('notif-dropdown');
+            wrapper?.addEventListener('click', () => {
+                dropdown.style.display = dropdown.style.display === 'none' ? 'block' : 'none';
+            });
+
+            // Clear individual notification
+            window.clearNotification = async function (notifId) {
+                try {
+                    const res = await fetch(`/api/v1/notifications/${notifId}/read`, {
+                        method: 'POST',
+                        headers: { 'Authorization': `Bearer ${authToken}` }
+                    });
+                    if (res.ok) {
+                        pollNotifications(); // Refresh notifications
+                    }
+                } catch (e) {
+                    console.error('Failed to clear notification:', e);
+                }
+            };
+
+            // Clear all notifications
+            window.clearAllNotifications = async function () {
+                try {
+                    const res = await fetch('/api/v1/notifications/clear-all', {
+                        method: 'POST',
+                        headers: { 'Authorization': `Bearer ${authToken}` }
+                    });
+                    if (res.ok) {
+                        pollNotifications(); // Refresh notifications
+                    }
+                } catch (e) {
+                    console.error('Failed to clear all notifications:', e);
+                }
+            };
+        }
+    </script>
+</body>
+
+</html>

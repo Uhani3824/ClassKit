@@ -1,0 +1,183 @@
+{% extends "base.html" %}
+
+{% block title %}Submissions - {{ assignment.title }}{% endblock %}
+
+{% block content %}
+<a href="/courses/{{ assignment.course_id }}/classwork"
+    style="display: inline-flex; align-items: center; gap: 0.5rem; color: var(--primary-color); text-decoration: none; margin-bottom: 1rem; font-weight: 500;">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M19 12H5M12 19l-7-7 7-7" />
+    </svg>
+    Back to Classwork
+</a>
+<h1>Submissions: {{ assignment.title }}</h1>
+
+<div style="margin-top: 2rem;">
+    <table style="width: 100%; border-collapse: collapse;">
+        <thead>
+            <tr style="text-align: left; border-bottom: 2px solid var(--border-color);">
+                <th style="padding: 1rem;">Student</th>
+                <th style="padding: 1rem;">Status</th>
+                <th style="padding: 1rem;">Work</th>
+                <th style="padding: 1rem;">Grade</th>
+                <th style="padding: 1rem;">Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for sub in submissions %}
+            <tr style="border-bottom: 1px solid var(--border-color);">
+                <td style="padding: 1rem;">{{ sub.student.name }}</td>
+                <td style="padding: 1rem;">
+                    {% if sub.is_late %}
+                    <span style="color: #d93025; font-weight: 600;">Done late</span>
+                    {% else %}
+                    <span style="color: #1e8e3e; font-weight: 600;">Turned in</span>
+                    {% endif %}
+                </td>
+                <td style="padding: 1rem;">
+                    {% if sub.submission_text %}
+                    <p style="font-size: 0.85rem; margin-bottom: 0.5rem;"><strong>Comment:</strong> {{
+                        sub.submission_text }}</p>
+                    {% endif %}
+                    <div style="display: flex; flex-direction: column; gap: 0.25rem;">
+                        {% for attachment in sub.attachments %}
+                        <div class="card"
+                            style="padding: 0.25rem 0.5rem; display: flex; align-items: center; gap: 0.5rem; background: #f8f9fa; border: 1px solid var(--border-color); justify-content: space-between; margin-top: 0.25rem;">
+                            <a href="{{ attachment.file_url }}" target="_blank" title="Preview"
+                                style="display: flex; align-items: center; gap: 0.5rem; text-decoration: none; color: inherit; flex: 1; overflow: hidden;">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2">
+                                    <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z" />
+                                    <polyline points="13 2 13 9 20 9" />
+                                </svg>
+                                <span
+                                    style="font-size: 0.8rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{
+                                    attachment.filename }}</span>
+                            </a>
+                            <a href="{{ attachment.file_url }}?download=true" title="Download"
+                                style="color: var(--primary-color);">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2">
+                                    <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v4M7 10l5 5 5-5M12 15V3" />
+                                </svg>
+                            </a>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% if not sub.attachments and not sub.submission_text %}
+                    <span style="color: var(--text-secondary); font-size: 0.85rem;">No files or text</span>
+                    {% endif %}
+                </td>
+                <td style="padding: 1rem;">
+                    <input type="number" id="grade_{{ sub.id }}" value="{{ sub.grade or '' }}" min="0"
+                        max="{{ assignment.max_points }}" step="1" style="width: 60px; padding: 0.4rem;"
+                        oninput="this.value = this.value.replace(/[^0-9]/g, '')">
+                    <span style="color: var(--text-secondary);">/ {{ assignment.max_points }}</span>
+                </td>
+                <td style="padding: 1rem;">
+                    <button class="btn btn-primary" onclick="submitGrade({{ sub.id }})">Save</button>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    const token = localStorage.getItem('token');
+    const maxPoints = {{ assignment.max_points }};
+
+    // Toast notification function
+    function showToast(message, type = 'success') {
+        const toast = document.createElement('div');
+        toast.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 1rem 1.5rem;
+            background: ${type === 'success' ? 'linear-gradient(135deg, #4caf50, #45a049)' : 'linear-gradient(135deg, #f44336, #da190b)'};
+            color: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            z-index: 10000;
+            font-weight: 500;
+            animation: slideIn 0.3s ease-out;
+            max-width: 400px;
+        `;
+        toast.textContent = message;
+        document.body.appendChild(toast);
+
+        setTimeout(() => {
+            toast.style.animation = 'slideOut 0.3s ease-out';
+            setTimeout(() => toast.remove(), 300);
+        }, 3000);
+    }
+
+    // Add animations
+    const style = document.createElement('style');
+    style.textContent = `
+        @keyframes slideIn {
+            from { transform: translateX(400px); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        @keyframes slideOut {
+            from { transform: translateX(0); opacity: 1; }
+            to { transform: translateX(400px); opacity: 0; }
+        }
+    `;
+    document.head.appendChild(style);
+
+    async function submitGrade(subId) {
+        const input = document.getElementById(`grade_${subId}`);
+        const grade = parseInt(input.value);
+
+        // Validation
+        if (input.value === '' || input.value === null) {
+            showToast('Please enter a grade', 'error');
+            input.focus();
+            return;
+        }
+
+        if (isNaN(grade)) {
+            showToast('Grade must be a valid number', 'error');
+            input.focus();
+            return;
+        }
+
+        if (grade < 0) {
+            showToast('Grade cannot be negative', 'error');
+            input.value = 0;
+            input.focus();
+            return;
+        }
+
+        if (grade > maxPoints) {
+            showToast(`Grade cannot exceed ${maxPoints} points`, 'error');
+            input.value = maxPoints;
+            input.focus();
+            return;
+        }
+
+        try {
+            const res = await fetch(`/api/v1/assignments/submissions/${subId}/grade?grade=${grade}`, {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+
+            if (res.ok) {
+                showToast('Grade saved successfully!', 'success');
+                input.style.background = '#e8f5e9';
+                setTimeout(() => input.style.background = '', 1000);
+            } else {
+                const err = await res.json();
+                showToast(err.detail || 'Failed to save grade', 'error');
+            }
+        } catch (error) {
+            showToast('Network error. Please try again.', 'error');
+        }
+    }
+</script>
+{% endblock %}

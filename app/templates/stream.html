@@ -1,0 +1,306 @@
+{% extends "base.html" %}
+
+{% block title %}{{ course.title }} - Stream{% endblock %}
+
+{% block content %}
+<div class="course-header card animate-fade"
+    style="background: linear-gradient(135deg, #4285f4, #1a73e8); color: white; padding: 3rem 2rem; margin-bottom: 2rem;">
+    <h1>{{ course.title }}</h1>
+    <p>{{ course.section or "" }}</p>
+    <p style="margin-top: 1rem; font-size: 0.9rem;">Class Code: <strong>{{ course.code }}</strong></p>
+</div>
+
+<div class="course-nav">
+    <a href="/courses/{{ course.id }}" class="course-nav-item active">Stream</a>
+    <a href="/courses/{{ course.id }}/classwork" class="course-nav-item">Classwork</a>
+    <a href="/courses/{{ course.id }}/people" class="course-nav-item">People</a>
+</div>
+
+<div style="display: grid; grid-template-columns: 200px 1fr; gap: 2rem;">
+    <aside>
+        {% if user.role == 'student' %}
+        <div class="card glass" style="margin-bottom: 1.5rem;">
+            <h4>Upcoming</h4>
+            {% if upcoming_assignments %}
+            {% for assignment in upcoming_assignments %}
+            <a href="/courses/{{ course.id }}/assignments/{{ assignment.id }}"
+                style="display: block; padding: 0.75rem 0; border-bottom: 1px solid var(--border-color); text-decoration: none; color: inherit; transition: background 0.2s;"
+                onmouseover="this.style.background='#f5f5f5'" onmouseout="this.style.background='transparent'">
+                <div style="font-size: 0.85rem; font-weight: 600; color: var(--primary-color); margin-bottom: 0.25rem;">
+                    {{ assignment.title }}
+                </div>
+                <div style="font-size: 0.75rem; color: var(--text-secondary);">
+                    Due {{ assignment.due_date.strftime('%b %d') }}
+                </div>
+            </a>
+            {% endfor %}
+            <a href="/courses/{{ course.id }}/classwork"
+                style="font-size: 0.8rem; color: var(--primary-color); text-decoration: none; display: block; margin-top: 1rem;">
+                View all
+            </a>
+            {% else %}
+            <p style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 0.5rem;">
+                Woohoo, no work due soon!
+            </p>
+            <a href="/courses/{{ course.id }}/classwork"
+                style="font-size: 0.8rem; color: var(--primary-color); text-decoration: none; display: block; margin-top: 1rem;">
+                View all
+            </a>
+            {% endif %}
+        </div>
+        {% endif %}
+        {% if user.role == 'teacher' %}
+        <div class="card glass">
+            <h4>Analytics</h4>
+            <a href="/courses/{{ course.id }}/analytics"
+                style="font-size: 0.8rem; color: var(--primary-color); text-decoration: none; display: block; margin-top: 1rem;">View
+                Dashboard</a>
+        </div>
+        {% endif %}
+    </aside>
+
+    <div class="stream-feed">
+        <div class="card glass animate-fade" style="margin-bottom: 1.5rem; cursor: pointer;"
+            onclick="showModal('postModal')">
+            <div style="display: flex; align-items: center; gap: 1rem;">
+                <div
+                    style="width: 40px; height: 40px; border-radius: 50%; background: #e8f0fe; display: flex; align-items: center; justify-content: center; color: #1a73e8;">
+                    {{ user.name[0] | upper }}
+                </div>
+                <span style="color: var(--text-secondary);">Announce something to your class</span>
+            </div>
+        </div>
+
+        {% for post in posts %}
+        <div class="card animate-fade" style="margin-bottom: 1.5rem; animation-delay: {{ loop.index0 * 0.1 }}s;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem;">
+                <div style="display: flex; gap: 1rem;">
+                    <div
+                        style="width: 40px; height: 40px; border-radius: 50%; background: #f1f3f4; display: flex; align-items: center; justify-content: center;">
+                        {{ post.user.name[0] | upper }}
+                    </div>
+                    <div>
+                        <div style="font-weight: 600;">{{ post.user.name }}</div>
+                        <div style="font-size: 0.75rem; color: var(--text-secondary);">{{ post.timestamp.strftime('%B
+                            %d, %Y') }}</div>
+                    </div>
+                </div>
+                {% if post.type == 'announcement' %}
+                <span
+                    style="font-size: 0.7rem; padding: 2px 8px; border-radius: 12px; background: #e8f0fe; color: #1967d2; font-weight: 500;">Announcement</span>
+                {% endif %}
+
+                {% if post.user_id == user.id %}
+                <button class="btn" onclick="deletePost({{ post.id }})"
+                    style="padding: 0.25rem; background: transparent; color: #d93025; opacity: 0.7;"
+                    title="Delete post">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path
+                            d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2M10 11v6M14 11v6" />
+                    </svg>
+                </button>
+                {% endif %}
+            </div>
+            <div style="margin-bottom: 1.5rem; line-height: 1.6;">{{ post.text or "" }}</div>
+
+            <div style="display: flex; flex-wrap: wrap; gap: 1rem;">
+                {% for attachment in post.attachments %}
+                <div class="card"
+                    style="display: flex; align-items: center; gap: 0.75rem; padding: 0.5rem 1rem; background: #f8f9fa; border: 1px solid var(--border-color); min-width: 240px; justify-content: space-between;">
+                    <a href="{{ attachment.file_url }}" target="_blank" title="Preview in browser"
+                        style="display: flex; align-items: center; gap: 0.75rem; text-decoration: none; color: inherit; flex: 1; overflow: hidden;">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#5f6368" stroke-width="2">
+                            <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z" />
+                            <polyline points="13 2 13 9 20 9" />
+                        </svg>
+                        <span
+                            style="font-size: 0.85rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 150px;">{{
+                            attachment.filename }}</span>
+                    </a>
+                    <a href="{{ attachment.file_url }}?download=true" title="Download"
+                        style="color: var(--primary-color);">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v4M7 10l5 5 5-5M12 15V3" />
+                        </svg>
+                    </a>
+                </div>
+                {% endfor %}
+            </div>
+
+            <hr style="border: none; border-top: 1px solid var(--border-color); margin: 1rem 0;">
+
+            <div class="comments">
+                {% for comment in post.comments %}
+                <div style="display: flex; gap: 0.75rem; margin-bottom: 0.75rem;">
+                    <div
+                        style="width: 32px; height: 32px; border-radius: 50%; background: #f1f3f4; display: flex; align-items: center; justify-content: center; font-size: 0.8rem;">
+                        {{ comment.user.name[0] | upper }}
+                    </div>
+                    <div style="background: #f8f9fa; padding: 0.5rem 1rem; border-radius: 12px; flex: 1;">
+                        <div style="font-weight: 600; font-size: 0.85rem;">{{ comment.user.name }}</div>
+                        <div style="font-size: 0.9rem;">{{ comment.text }}</div>
+                    </div>
+                </div>
+                {% endfor %}
+
+                <form onsubmit="addComment(event, {{ post.id }})"
+                    style="display: flex; gap: 0.75rem; margin-top: 1rem;">
+                    <input type="text" placeholder="Add class comment..."
+                        style="flex: 1; padding: 0.6rem 1rem; border: 1px solid var(--border-color); border-radius: 20px; outline: none; font-size: 0.9rem;">
+                    <button type="submit" class="btn btn-primary" style="padding: 0.5rem 1rem; border-radius: 20px;">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" />
+                        </svg>
+                    </button>
+                </form>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Post Modal -->
+<div id="postModal" class="modal"
+    style="display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5);">
+    <div class="card splash" style="max-width: 600px; margin: 10% auto; background: white;">
+        <h2>Create Post</h2>
+        <form id="postForm" style="margin-top: 1.5rem;">
+            <div class="form-group">
+                <textarea id="post_text" placeholder="Share with your class"
+                    style="min-height: 150px; font-size: 1.1rem;"></textarea>
+            </div>
+
+            <div id="file_previews" style="margin-bottom: 1rem; display: flex; flex-wrap: wrap; gap: 0.5rem;"></div>
+
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <input type="file" id="post_file" multiple style="display: none;" onchange="handleFileSelect(this)">
+                    <button type="button" class="btn" onclick="document.getElementById('post_file').click()">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <path
+                                d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48" />
+                        </svg>
+                        Attach
+                    </button>
+                    {% if user.role == 'teacher' %}
+                    <select id="post_type" style="padding: 0.5rem; border-radius: 4px; margin-left: 1rem;">
+                        <option value="post">Post</option>
+                        <option value="announcement">Announcement</option>
+                    </select>
+                    {% else %}
+                    <input type="hidden" id="post_type" value="post">
+                    {% endif %}
+                </div>
+                <div style="display: flex; gap: 1rem;">
+                    <button type="button" class="btn" onclick="hideModal('postModal')">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Post</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    function showModal(id) { document.getElementById(id).style.display = 'block'; }
+    function hideModal(id) { document.getElementById(id).style.display = 'none'; }
+
+    const token = localStorage.getItem('token');
+    const courseId = {{ course.id }};
+
+    let selectedFiles = [];
+
+    function handleFileSelect(input) {
+        const newFiles = Array.from(input.files);
+        selectedFiles = [...selectedFiles, ...newFiles];
+        renderPreviews();
+        input.value = ''; // Reset input to allow re-selecting same files
+    }
+
+    function removeFile(index) {
+        selectedFiles.splice(index, 1);
+        renderPreviews();
+    }
+
+    function renderPreviews() {
+        const previewContainer = document.getElementById('file_previews');
+        previewContainer.innerHTML = '';
+        selectedFiles.forEach((file, index) => {
+            const div = document.createElement('div');
+            div.className = 'card';
+            div.style.cssText = 'padding: 5px 10px; font-size: 0.8rem; background: #e8f0fe; border-radius: 4px; display: flex; align-items: center; gap: 5px;';
+            div.innerHTML = `
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><polyline points="13 2 13 9 20 9"/></svg>
+                <span title="${file.name}">${file.name.length > 15 ? file.name.substring(0, 12) + '...' : file.name}</span>
+                <button type="button" onclick="removeFile(${index})" style="background:none; border:none; padding:0; cursor:pointer; color:#d93025; display:flex; align-items:center;">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                </button>
+            `;
+            previewContainer.appendChild(div);
+        });
+    }
+
+    document.getElementById('postForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const text = document.getElementById('post_text').value;
+
+        if (!text && selectedFiles.length === 0) {
+            alert('Please add text or an attachment');
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append('course_id', courseId);
+        formData.append('text', text);
+        formData.append('type', document.getElementById('post_type').value);
+
+        selectedFiles.forEach(file => {
+            formData.append('files', file);
+        });
+
+        const res = await fetch('/api/v1/stream/posts', {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${token}` },
+            body: formData
+        });
+        if (res.ok) window.location.reload();
+        else {
+            const err = await res.json();
+            alert(err.detail || 'Failed to create post');
+        }
+    });
+
+    async function deletePost(postId) {
+        if (!confirm('Are you sure you want to delete this post?')) return;
+
+        const res = await fetch(`/api/v1/stream/posts/${postId}`, {
+            method: 'DELETE',
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (res.ok) window.location.reload();
+        else {
+            const err = await res.json();
+            alert(err.detail || 'Failed to delete post');
+        }
+    }
+
+    async function addComment(e, postId) {
+        e.preventDefault();
+        const text = e.target.querySelector('input').value;
+        const res = await fetch(`/api/v1/stream/posts/${postId}/comments`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ text })
+        });
+        if (res.ok) window.location.reload();
+    }
+</script>
+{% endblock %}

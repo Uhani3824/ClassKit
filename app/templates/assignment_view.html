@@ -1,0 +1,224 @@
+{% extends "base.html" %}
+
+{% block title %}{{ assignment.title }} - Class-Kit{% endblock %}
+
+{% block content %}
+<a href="/courses/{{ assignment.course_id }}/classwork"
+    style="display: inline-flex; align-items: center; gap: 0.5rem; color: var(--primary-color); text-decoration: none; margin-bottom: 1rem; font-weight: 500;">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M19 12H5M12 19l-7-7 7-7" />
+    </svg>
+    Back to Classwork
+</a>
+<div style="display: grid; grid-template-columns: 1fr 300px; gap: 2rem;">
+    <div>
+        <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 2rem;">
+            <div>
+                <h1 style="color: var(--primary-color); margin-bottom: 0.5rem;">{{ assignment.title }}</h1>
+                <p style="color: var(--text-secondary);">{{ assignment.due_date.strftime('%b %d, %Y %I:%M %p') }}</p>
+            </div>
+            <div style="text-align: right;">
+                <div style="font-size: 1.25rem; font-weight: 700;">
+                    {% if submission and submission.grade is not none %}
+                    {{ submission.grade }} / {{ assignment.max_points }}
+                    {% else %}
+                    {{ assignment.max_points }} points
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        <hr style="border: none; border-top: 1px solid var(--border-color); margin-bottom: 1.5rem;">
+        <div style="line-height: 1.6;">{{ assignment.description }}</div>
+
+        {% if assignment.attachments %}
+        <div style="margin-top: 2rem;">
+            <h4 style="margin-bottom: 1rem;">Materials</h4>
+            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1rem;">
+                {% for attachment in assignment.attachments %}
+                <div class="card"
+                    style="padding: 0.5rem 1rem; display: flex; align-items: center; gap: 0.75rem; background: #f8f9fa; border: 1px solid var(--border-color); justify-content: space-between;">
+                    <a href="{{ attachment.file_url }}" target="_blank" title="Preview"
+                        style="display: flex; align-items: center; gap: 0.5rem; text-decoration: none; color: inherit; flex: 1; overflow: hidden;">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z" />
+                            <polyline points="13 2 13 9 20 9" />
+                        </svg>
+                        <span
+                            style="font-size: 0.85rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{
+                            attachment.filename }}</span>
+                    </a>
+                    <a href="{{ attachment.file_url }}?download=true" title="Download"
+                        style="color: var(--primary-color);">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v4M7 10l5 5 5-5M12 15V3" />
+                        </svg>
+                    </a>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <aside>
+        <div class="card glass animate-fade">
+            <form id="submitForm" style="margin-top: 1.5rem;">
+                <div class="form-group">
+                    <label>Attachments</label>
+                    <input type="file" id="sub_files" multiple onchange="handleFileSelect(this)">
+                    <div id="file_previews"
+                        style="margin-top: 1rem; display: flex; flex-direction: column; gap: 0.5rem;"></div>
+                    <div id="attachment_counter"
+                        style="margin-top: 0.5rem; font-size: 0.85rem; color: var(--primary-color); font-weight: 600; display: none;">
+                    </div>
+                </div>
+                {% set is_past_due = assignment.due_date < now %} {% if submission and is_past_due %} <p
+                    style="color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 0.5rem; font-style: italic;">
+                    Resubmission closed (deadline passed).
+                    </p>
+                    {% endif %}
+                    <button type="submit" class="btn btn-primary" style="width: 100%;" {% if submission and (is_past_due
+                        or submission.grade is not none) %}disabled{% endif %}>
+                        {% if submission %}Resubmit{% else %}Turn in{% endif %}
+                    </button>
+            </form>
+
+            {% if submission %}
+            <div id="current_submission"
+                style="margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid var(--border-color);">
+                <h4>Your Work</h4>
+                <div id="sub_attachments_list"
+                    style="margin-top: 0.5rem; display: flex; flex-direction: column; gap: 0.5rem;">
+                    {% if submission.submission_text %}
+                    <p style="font-size: 0.9rem; color: var(--text-secondary);">{{ submission.submission_text }}</p>
+                    {% endif %}
+                    {% for attachment in submission.attachments %}
+                    <div class="card"
+                        style="padding: 0.5rem 1rem; display: flex; align-items: center; gap: 0.75rem; background: #f8f9fa; border: 1px solid var(--border-color); justify-content: space-between;">
+                        <a href="{{ attachment.file_url }}" target="_blank" title="Preview"
+                            style="display: flex; align-items: center; gap: 0.5rem; text-decoration: none; color: inherit; flex: 1; overflow: hidden;">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
+                                <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z" />
+                                <polyline points="13 2 13 9 20 9" />
+                            </svg>
+                            <span
+                                style="font-size: 0.85rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{
+                                attachment.filename }}</span>
+                        </a>
+                        <a href="{{ attachment.file_url }}?download=true" title="Download"
+                            style="color: var(--primary-color);">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
+                                <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v4M7 10l5 5 5-5M12 15V3" />
+                            </svg>
+                        </a>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </aside>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    const token = localStorage.getItem('token');
+    const assignmentId = {{ assignment.id }};
+
+    let selectedFiles = [];
+
+    function handleFileSelect(input) {
+        const newFiles = Array.from(input.files);
+        selectedFiles = [...selectedFiles, ...newFiles];
+        renderPreviews();
+        input.value = '';
+    }
+
+    function removeFile(index) {
+        selectedFiles.splice(index, 1);
+        renderPreviews();
+    }
+
+    function renderPreviews() {
+        const previewContainer = document.getElementById('file_previews');
+        const counter = document.getElementById('attachment_counter');
+
+        previewContainer.innerHTML = '';
+        selectedFiles.forEach((file, index) => {
+            const div = document.createElement('div');
+            div.className = 'card';
+            div.style.cssText = 'padding: 5px 10px; font-size: 0.8rem; background: #e8f0fe; border-radius: 4px; display: flex; align-items: center; gap: 5px; width: 100%; justify-content: space-between;';
+            div.innerHTML = `
+                <div style="display: flex; align-items: center; gap: 5px; overflow: hidden;">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><polyline points="13 2 13 9 20 9"/></svg>
+                    <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${file.name}">${file.name}</span>
+                </div>
+                <button type="button" onclick="removeFile(${index})" style="background:none; border:none; padding:0; cursor:pointer; color:#d93025; display:flex; align-items:center;">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                </button>
+            `;
+            previewContainer.appendChild(div);
+        });
+
+        if (selectedFiles.length > 0) {
+            counter.style.display = 'block';
+            counter.innerText = `${selectedFiles.length} file${selectedFiles.length > 1 ? 's' : ''} attached`;
+        } else {
+            counter.style.display = 'none';
+        }
+    }
+
+    document.getElementById('submitForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const btn = e.target.querySelector('button[type="submit"]');
+        const originalText = btn.innerText;
+
+        btn.disabled = true;
+        btn.innerText = 'Turning in...';
+
+        try {
+            const formData = new FormData();
+
+            selectedFiles.forEach(file => {
+                formData.append('files', file);
+            });
+
+            const res = await fetch(`/api/v1/assignments/${assignmentId}/submit`, {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}` },
+                body: formData
+            });
+
+            if (res.ok) {
+                window.location.reload();
+            } else {
+                let errorMsg = 'Submission failed';
+                try {
+                    const err = await res.json();
+                    errorMsg = err.detail || errorMsg;
+                } catch (jsonErr) {
+                    errorMsg = `Server error (${res.status})`;
+                }
+                alert(errorMsg);
+                btn.disabled = false;
+                btn.innerText = originalText;
+            }
+        } catch (err) {
+            alert('Network error. Please try again.');
+            btn.disabled = false;
+            btn.innerText = originalText;
+        }
+    });
+
+    async function loadSubmission() {
+        // Fetch to find if user has submitted
+        // For now, let's assume we pass it or fetch from courses/assignments/id which needs to return it
+    }
+    loadSubmission();
+</script>
+{% endblock %}

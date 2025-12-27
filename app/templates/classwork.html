@@ -1,0 +1,186 @@
+{% extends "base.html" %}
+
+{% block title %}Classwork - {{ course.title }}{% endblock %}
+
+{% block content %}
+<div class="course-header"
+    style="margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center;">
+    <div>
+        <h1>Classwork</h1>
+        <p style="color: var(--text-secondary);">{{ course.title }}</p>
+    </div>
+    {% if user.role == "teacher" %}
+    <button class="btn btn-primary" onclick="showModal('createAssignmentModal')">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            style="margin-right: 0.5rem;">
+            <path d="M12 5v14M5 12h14" />
+        </svg>
+        Create
+    </button>
+    {% endif %}
+</div>
+
+<div class="course-nav">
+    <a href="/courses/{{ course.id }}" class="course-nav-item">Stream</a>
+    <a href="/courses/{{ course.id }}/classwork" class="course-nav-item active">Classwork</a>
+    <a href="/courses/{{ course.id }}/people" class="course-nav-item">People</a>
+</div>
+
+<div id="assignments_list" class="animate-fade">
+    {% for assignment in assignments %}
+    <div class="card glass" style="margin-bottom: 1rem; cursor: pointer;"
+        onclick="toggleAssignment({{ assignment.id }})">
+        <div style="display: flex; align-items: center; gap: 1rem;">
+            <div
+                style="width: 40px; height: 40px; border-radius: 50%; background: #e8f0fe; display: flex; align-items: center; justify-content: center; color: #1a73e8;">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z" />
+                    <polyline points="13 2 13 9 20 9" />
+                </svg>
+            </div>
+            <div style="flex: 1;">
+                <h4 style="margin: 0;">{{ assignment.title }}</h4>
+                <span style="font-size: 0.8rem; color: var(--text-secondary);">Posted {{ assignment.id }} • Due {{
+                    assignment.due_date.strftime('%b %d') }}</span>
+            </div>
+        </div>
+
+        <div id="details_{{ assignment.id }}"
+            style="display: none; margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid var(--border-color);">
+            <p style="margin-bottom: 1.5rem;">{{ assignment.description }}</p>
+
+            <div style="display: flex; justify-content: space-between; align-items: flex-end;">
+                <div>
+                    {% if user.role == "student" %}
+                    <div id="submission_status_{{ assignment.id }}" style="margin-bottom: 1rem; font-weight: 600;">
+                    </div>
+                    <button class="btn btn-primary" onclick="showSubmitModal({{ assignment.id }})">View
+                        Assignment</button>
+                    {% else %}
+                    <button class="btn btn-primary" onclick="viewSubmissions({{ assignment.id }})">View
+                        Submissions</button>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Create Assignment Modal -->
+<div id="createAssignmentModal" class="modal"
+    style="display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5);">
+    <div class="card splash" style="max-width: 600px; margin: 10% auto; background: white;">
+        <h2>Create Assignment</h2>
+        <form id="createAssignmentForm" style="margin-top: 1.5rem;">
+            <div class="form-group">
+                <label>Title</label>
+                <input type="text" id="assign_title" required>
+            </div>
+            <div class="form-group">
+                <label>Points</label>
+                <input type="number" id="assign_points" value="100" min="0">
+            </div>
+            <div class="form-group">
+                <label>Due Date</label>
+                <input type="datetime-local" id="assign_due" required>
+            </div>
+            <div class="form-group">
+                <label>Attachments</label>
+                <input type="file" id="assign_files" multiple onchange="handleFileSelect(this)">
+                <div id="file_previews" style="margin-top: 0.5rem; display: flex; flex-wrap: wrap; gap: 0.5rem;"></div>
+            </div>
+            <div style="display: flex; gap: 1rem; justify-content: flex-end; margin-top: 1.5rem;">
+                <button type="button" class="btn" onclick="hideModal('createAssignmentModal')">Cancel</button>
+                <button type="submit" class="btn btn-primary">Assign</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    function showModal(id) { document.getElementById(id).style.display = 'block'; }
+    function hideModal(id) { document.getElementById(id).style.display = 'none'; }
+
+    function toggleAssignment(id) {
+        const el = document.getElementById(`details_${id}`);
+        el.style.display = el.style.display === 'none' ? 'block' : 'none';
+    }
+
+    const token = localStorage.getItem('token');
+    const courseId = {{ course.id }};
+
+    let selectedFiles = [];
+
+    function handleFileSelect(input) {
+        const newFiles = Array.from(input.files);
+        selectedFiles = [...selectedFiles, ...newFiles];
+        renderPreviews();
+        input.value = '';
+    }
+
+    function removeFile(index) {
+        selectedFiles.splice(index, 1);
+        renderPreviews();
+    }
+
+    function renderPreviews() {
+        const previewContainer = document.getElementById('file_previews');
+        previewContainer.innerHTML = '';
+        selectedFiles.forEach((file, index) => {
+            const div = document.createElement('div');
+            div.className = 'card';
+            div.style.cssText = 'padding: 5px 10px; font-size: 0.8rem; background: #e8f0fe; border-radius: 4px; display: flex; align-items: center; gap: 5px; width: 100%; justify-content: space-between;';
+            div.innerHTML = `
+                <div style="display: flex; align-items: center; gap: 5px; overflow: hidden;">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><polyline points="13 2 13 9 20 9"/></svg>
+                    <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${file.name}">${file.name}</span>
+                </div>
+                <button type="button" onclick="removeFile(${index})" style="background:none; border:none; padding:0; cursor:pointer; color:#d93025; display:flex; align-items:center;">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                </button>
+            `;
+            previewContainer.appendChild(div);
+        });
+    }
+
+    document.getElementById('createAssignmentForm')?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const formData = new FormData();
+        formData.append('course_id', courseId);
+        formData.append('title', document.getElementById('assign_title').value);
+        formData.append('description', document.getElementById('assign_desc')?.value || '');
+        formData.append('max_points', document.getElementById('assign_points').value);
+        formData.append('due_date', new Date(document.getElementById('assign_due').value).toISOString());
+        formData.append('allow_late', 'true');
+
+        selectedFiles.forEach(file => {
+            formData.append('files', file);
+        });
+
+        const res = await fetch('/api/v1/assignments/', {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${token}` },
+            body: formData
+        });
+        if (res.ok) window.location.reload();
+        else {
+            const err = await res.json();
+            alert(err.detail || 'Failed to create assignment');
+        }
+    });
+
+    function showSubmitModal(id) {
+        // Navigate to a dedicated assignment view for students
+        window.location.href = `/courses/${courseId}/assignments/${id}`;
+    }
+
+    function viewSubmissions(id) {
+        // Navigate to a dedicated submission list for teachers
+        window.location.href = `/courses/${courseId}/assignments/${id}/submissions`;
+    }
+</script>
+{% endblock %}

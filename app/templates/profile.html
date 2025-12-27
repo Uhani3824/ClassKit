@@ -1,0 +1,184 @@
+{% extends "base.html" %}
+
+{% block title %}Profile - Class-Kit{% endblock %}
+
+{% block content %}
+<a href="/dashboard"
+    style="display: inline-flex; align-items: center; gap: 0.5rem; color: var(--primary-color); text-decoration: none; margin-bottom: 1rem; font-weight: 500;">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M19 12H5M12 19l-7-7 7-7" />
+    </svg>
+    Back to Dashboard
+</a>
+
+<div style="max-width: 800px; margin: 0 auto;">
+    <h1 style="margin-bottom: 2rem;">Profile Settings</h1>
+
+    <!-- Profile Picture Section -->
+    <div class="card" style="margin-bottom: 2rem; padding: 2rem;">
+        <h2 style="margin-bottom: 1.5rem;">Profile Picture</h2>
+        <div style="display: flex; align-items: center; gap: 2rem;">
+            <div
+                style="width: 100px; height: 100px; border-radius: 50%; overflow: hidden; background: var(--border-color);">
+                {% if user.profile_picture_url %}
+                <img src="{{ user.profile_picture_url }}" alt="Profile"
+                    style="width: 100%; height: 100%; object-fit: cover;">
+                {% else %}
+                <div
+                    style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 2.5rem; font-weight: 700; color: white; background: linear-gradient(135deg, var(--primary-color), var(--accent-color));">
+                    {{ user.name[0].upper() }}
+                </div>
+                {% endif %}
+            </div>
+            <div>
+                <form id="profilePictureForm" enctype="multipart/form-data">
+                    <input type="file" id="profile_pic" accept="image/*" style="margin-bottom: 0.5rem;">
+                    <button type="submit" class="btn btn-primary">Upload Picture</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Name Section -->
+    <div class="card" style="margin-bottom: 2rem; padding: 2rem;">
+        <h2 style="margin-bottom: 1.5rem;">Name</h2>
+        <form id="nameForm">
+            <div class="form-group">
+                <label>Full Name</label>
+                <input type="text" id="name" value="{{ user.name }}" required>
+            </div>
+            <button type="submit" class="btn btn-primary">Update Name</button>
+        </form>
+    </div>
+
+    <!-- Password Section -->
+    <div class="card" style="margin-bottom: 2rem; padding: 2rem;">
+        <h2 style="margin-bottom: 1.5rem;">Password</h2>
+        <form id="passwordForm">
+            <div class="form-group">
+                <label>Current Password</label>
+                <input type="password" id="current_password" required>
+            </div>
+            <div class="form-group">
+                <label>New Password</label>
+                <input type="password" id="new_password" minlength="8" required>
+            </div>
+            <div class="form-group">
+                <label>Confirm New Password</label>
+                <input type="password" id="confirm_password" minlength="8" required>
+            </div>
+            <button type="submit" class="btn btn-primary">Update Password</button>
+        </form>
+    </div>
+
+    <!-- Account Info -->
+    <div class="card" style="padding: 2rem;">
+        <h2 style="margin-bottom: 1.5rem;">Account Information</h2>
+        <div style="display: grid; gap: 1rem;">
+            <div>
+                <strong>Email:</strong> {{ user.email }}
+            </div>
+            <div>
+                <strong>Role:</strong> <span style="text-transform: capitalize;">{{ user.role }}</span>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    const token = localStorage.getItem('token');
+
+    // Profile Picture Upload
+    document.getElementById('profilePictureForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const fileInput = document.getElementById('profile_pic');
+        if (!fileInput.files[0]) {
+            alert('Please select an image');
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append('file', fileInput.files[0]);
+
+        try {
+            const res = await fetch('/api/v1/users/me/profile-picture', {
+                method: 'PUT',
+                headers: { 'Authorization': `Bearer ${token}` },
+                body: formData
+            });
+
+            if (res.ok) {
+                alert('Profile picture updated successfully!');
+                window.location.reload();
+            } else {
+                const err = await res.json();
+                alert(err.detail || 'Failed to update profile picture');
+            }
+        } catch (err) {
+            alert('Network error. Please try again.');
+        }
+    });
+
+    // Name Update
+    document.getElementById('nameForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const name = document.getElementById('name').value;
+
+        try {
+            const res = await fetch(`/api/v1/users/me?name=${encodeURIComponent(name)}`, {
+                method: 'PUT',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+
+            if (res.ok) {
+                alert('Name updated successfully!');
+                window.location.reload();
+            } else {
+                const err = await res.json();
+                alert(err.detail || 'Failed to update name');
+            }
+        } catch (err) {
+            alert('Network error. Please try again.');
+        }
+    });
+
+    // Password Update
+    document.getElementById('passwordForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const currentPassword = document.getElementById('current_password').value;
+        const newPassword = document.getElementById('new_password').value;
+        const confirmPassword = document.getElementById('confirm_password').value;
+
+        if (newPassword !== confirmPassword) {
+            alert('New passwords do not match');
+            return;
+        }
+
+        try {
+            const res = await fetch('/api/v1/users/me/password', {
+                method: 'PUT',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    current_password: currentPassword,
+                    new_password: newPassword
+                })
+            });
+
+            if (res.ok) {
+                alert('Password updated successfully!');
+                document.getElementById('passwordForm').reset();
+            } else {
+                const err = await res.json();
+                alert(err.detail || 'Failed to update password');
+            }
+        } catch (err) {
+            alert('Network error. Please try again.');
+        }
+    });
+</script>
+{% endblock %}

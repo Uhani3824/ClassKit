@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+
+{% block title %}{{ course.title }} - People{% endblock %}
+
+{% block content %}
+<div class="course-header card animate-fade"
+    style="background: linear-gradient(135deg, #4285f4, #1a73e8); color: white; padding: 3rem 2rem; margin-bottom: 2rem;">
+    <h1>{{ course.title }}</h1>
+    <p>{{ course.section or "" }}</p>
+</div>
+
+<div class="course-nav">
+    <a href="/courses/{{ course.id }}" class="course-nav-item">Stream</a>
+    <a href="/courses/{{ course.id }}/classwork" class="course-nav-item">Classwork</a>
+    <a href="/courses/{{ course.id }}/people" class="course-nav-item active">People</a>
+</div>
+
+<div style="max-width: 800px; margin: 0 auto;">
+    <!-- Teacher Section -->
+    <div class="card animate-fade" style="margin-bottom: 2rem;">
+        <div style="border-bottom: 2px solid var(--primary-color); padding-bottom: 0.75rem; margin-bottom: 1.5rem;">
+            <h2 style="color: var(--primary-color); margin: 0;">Teacher</h2>
+        </div>
+
+        <div
+            style="display: flex; align-items: center; gap: 1rem; padding: 1rem; background: #f8f9fa; border-radius: 8px;">
+            <div
+                style="width: 50px; height: 50px; border-radius: 50%; overflow: hidden; background: var(--border-color);">
+                {% if teacher.profile_picture_url %}
+                <img src="{{ teacher.profile_picture_url }}" alt="{{ teacher.name }}"
+                    style="width: 100%; height: 100%; object-fit: cover;">
+                {% else %}
+                <div
+                    style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: 700; color: white; background: linear-gradient(135deg, var(--primary-color), var(--accent-color));">
+                    {{ teacher.name[0].upper() }}
+                </div>
+                {% endif %}
+            </div>
+            <div>
+                <div style="font-weight: 600; font-size: 1.1rem;">{{ teacher.name }}</div>
+                <div style="color: var(--text-secondary); font-size: 0.9rem;">{{ teacher.email }}</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Students Section -->
+    <div class="card animate-fade" style="animation-delay: 0.1s;">
+        <div
+            style="border-bottom: 2px solid var(--primary-color); padding-bottom: 0.75rem; margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center;">
+            <h2 style="color: var(--primary-color); margin: 0;">Students</h2>
+            <span
+                style="background: var(--primary-color); color: white; padding: 0.25rem 0.75rem; border-radius: 12px; font-size: 0.85rem; font-weight: 600;">
+                {{ students|length }}
+            </span>
+        </div>
+
+        {% if students %}
+        <div style="display: grid; gap: 0.75rem;">
+            {% for student in students %}
+            <div style="display: flex; align-items: center; gap: 1rem; padding: 0.75rem; border-radius: 8px; transition: background 0.2s;"
+                onmouseover="this.style.background='#f8f9fa'" onmouseout="this.style.background='transparent'">
+                <div
+                    style="width: 40px; height: 40px; border-radius: 50%; overflow: hidden; background: var(--border-color);">
+                    {% if student.profile_picture_url %}
+                    <img src="{{ student.profile_picture_url }}" alt="{{ student.name }}"
+                        style="width: 100%; height: 100%; object-fit: cover;">
+                    {% else %}
+                    <div
+                        style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 1rem; font-weight: 700; color: white; background: linear-gradient(135deg, #5f6368, #80868b);">
+                        {{ student.name[0].upper() }}
+                    </div>
+                    {% endif %}
+                </div>
+                <div style="flex: 1;">
+                    <div style="font-weight: 500;">{{ student.name }}</div>
+                    <div style="color: var(--text-secondary); font-size: 0.85rem;">{{ student.email }}</div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div style="text-align: center; padding: 3rem; color: var(--text-secondary);">
+            <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"
+                style="margin-bottom: 1rem; opacity: 0.5;">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                <circle cx="9" cy="7" r="4"></circle>
+                <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+            </svg>
+            <p style="font-size: 1.1rem; margin: 0;">No students enrolled yet</p>
+            <p style="font-size: 0.9rem; margin-top: 0.5rem;">Students can join using the class code: <strong>{{
+                    course.code }}</strong></p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
