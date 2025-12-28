@@ -1,42 +1,113 @@
 {% extends "base.html" %}
 
-{% block title %}Register - Class-Kit{% endblock %}
+{% block title %}Join Class-Kit{% endblock %}
 
 {% block content %}
 <div class="auth-wrapper">
-    <div class="card auth-form animate-fade">
-        <h2 style="margin-bottom: 2rem; text-align: center;">Join Class-Kit</h2>
+    <div class="card auth-form auth-form-premium animate-fade">
+        <div class="auth-header">
+            <a href="/" class="back-link">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="15 18 9 12 15 6"></polyline>
+                </svg>
+            </a>
+            <h1>Join Class-Kit</h1>
+            <p>Create your free educator or student profile</p>
+        </div>
+
         <form id="register-form">
             <div class="form-group">
-                <label>Full Name</label>
-                <input type="text" id="name" required placeholder="John Doe">
+                <label class="form-label-caps">Full Name</label>
+                <div class="input-with-icon">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="12" cy="7" r="4"></circle>
+                    </svg>
+                    <input type="text" id="name" required placeholder="John Doe">
+                </div>
             </div>
+
             <div class="form-group">
-                <label>Email Address</label>
-                <input type="email" id="email" required placeholder="john@example.com">
+                <label class="form-label-caps">Email Address</label>
+                <div class="input-with-icon">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                        <polyline points="22,6 12,13 2,6"></polyline>
+                    </svg>
+                    <input type="email" id="email" required placeholder="name@email.com">
+                </div>
             </div>
+
             <div class="form-group">
-                <label>Password</label>
-                <input type="password" id="password" required minlength="8" placeholder="••••••••">
+                <label class="form-label-caps">Password</label>
+                <div class="input-with-icon">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                        <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                    </svg>
+                    <input type="password" id="password" required minlength="8" placeholder="••••••••">
+                </div>
             </div>
-            <div class="form-group">
-                <label>Join as</label>
-                <select id="role" required>
-                    <option value="student">Student</option>
-                    <option value="teacher">Teacher</option>
-                </select>
+
+            <div class="role-selection">
+                <button type="button" class="role-btn active" data-role="student" onclick="setRole('student')">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M22 10v6M2 10l10-5 10 5-10 5z"></path>
+                        <path d="M6 12v5c3 3 9 3 12 0v-5"></path>
+                    </svg>
+                    Student
+                </button>
+                <button type="button" class="role-btn" data-role="teacher" onclick="setRole('teacher')">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M3 21h18"></path>
+                        <path d="M3 7v1a3 3 0 0 0 6 0V7m0 1a3 3 0 0 0 6 0V7m0 1a3 3 0 0 0 6 0V7H3z"></path>
+                        <path d="M19 21v-7a2 2 0 0 0-2-2H7a2 2 0 0 0-2 2v7"></path>
+                    </svg>
+                    Teacher
+                </button>
             </div>
-            <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1rem;">Create Account</button>
+            <input type="hidden" id="role" value="student">
+
+            <button type="submit" class="btn btn-join">
+                Join the Class
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                    <polyline points="12 5 19 12 12 19"></polyline>
+                </svg>
+            </button>
         </form>
-        <p style="margin-top: 1.5rem; text-align: center; font-size: 0.9rem; color: var(--text-secondary);">
-            Already have an account? <a href="/login" style="color: var(--primary-color);">Log in</a>
-        </p>
+
+        <div class="auth-footer">
+            Already have an account? <a href="/login">Sign in instead</a>
+        </div>
     </div>
 </div>
 {% endblock %}
 
 {% block extra_scripts %}
 <script>
+    function setRole(role) {
+        document.getElementById('role').value = role;
+        document.querySelectorAll('.role-btn').forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.role === role);
+        });
+
+        // Update placeholder based on role
+        const nameInput = document.getElementById('name');
+        if (role === 'teacher') {
+            nameInput.placeholder = 'Professor Oak';
+        } else {
+            nameInput.placeholder = 'John Doe';
+        }
+    }
+
     document.getElementById('register-form').onsubmit = async (e) => {
         e.preventDefault();
         const data = {
@@ -56,8 +127,7 @@
             const result = await response.json();
             alert(result.message || 'Registration successful! Please check your email to verify your account.');
             document.getElementById('register-form').reset();
-            // Optional: Redirect to login after a delay or let them read the alert
-            // window.location.href = '/login'; 
+            setRole('student'); // Reset to default role
         } else {
             const err = await response.json();
             alert(err.detail || 'Registration failed');

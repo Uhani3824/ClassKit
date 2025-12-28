@@ -26,6 +26,7 @@
     <a href="/courses/{{ course.id }}/people" class="course-nav-item">People</a>
 </div>
 
+{% if assignments %}
 <div id="assignments_list" class="animate-fade">
     {% for assignment in assignments %}
     <div class="card glass" style="margin-bottom: 1rem; cursor: pointer;"
@@ -47,7 +48,9 @@
 
         <div id="details_{{ assignment.id }}"
             style="display: none; margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid var(--border-color);">
+            {% if assignment.description %}
             <p style="margin-bottom: 1.5rem;">{{ assignment.description }}</p>
+            {% endif %}
 
             <div style="display: flex; justify-content: space-between; align-items: flex-end;">
                 <div>
@@ -66,33 +69,82 @@
     </div>
     {% endfor %}
 </div>
+{% else %}
+<div class="empty-state animate-fade" style="margin-top: 4rem;">
+    <div class="empty-state-icon">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path>
+            <rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect>
+            <path d="M9 14h6"></path>
+            <path d="M9 18h6"></path>
+            <path d="M9 10h6"></path>
+        </svg>
+    </div>
+    {% if user.role == "teacher" %}
+    <h2>Assign work to your class</h2>
+    <p>Create assignments, quizzes, and other materials to share with your students.</p>
+    <button class="btn btn-primary" style="margin-top: 1.5rem;" onclick="showModal('createAssignmentModal')">Create
+        Assignment</button>
+    {% else %}
+    <h2>No assignments yet</h2>
+    <p style="margin-bottom: 0;">This is where you'll see all classwork when it's posted by your teacher.</p>
+    {% endif %}
+</div>
+{% endif %}
 
 <!-- Create Assignment Modal -->
-<div id="createAssignmentModal" class="modal"
-    style="display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5);">
-    <div class="card splash" style="max-width: 600px; margin: 10% auto; background: white;">
-        <h2>Create Assignment</h2>
-        <form id="createAssignmentForm" style="margin-top: 1.5rem;">
+<div id="createAssignmentModal" class="modal-backdrop">
+    <div class="modal-content-premium animate-fade">
+        <div class="modal-header">
+            <h2>Create Assignment</h2>
+        </div>
+        <form id="createAssignmentForm">
             <div class="form-group">
-                <label>Title</label>
-                <input type="text" id="assign_title" required>
+                <label class="premium-label">Title</label>
+                <input type="text" id="assign_title" class="premium-input"
+                    placeholder="e.g. Introduction to Cloud Computing" required>
             </div>
             <div class="form-group">
-                <label>Points</label>
-                <input type="number" id="assign_points" value="100" min="0">
+                <label class="premium-label">Instructions (Optional)</label>
+                <textarea id="assign_desc" class="premium-input"
+                    placeholder="Add instructions or a description for this assignment..." rows="3"
+                    style="resize: vertical;"></textarea>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.2rem;">
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label class="premium-label">Points</label>
+                    <input type="number" id="assign_points" class="premium-input" value="100" min="0">
+                </div>
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label class="premium-label">Due Date</label>
+                    <input type="datetime-local" id="assign_due" class="premium-input" required>
+                </div>
             </div>
             <div class="form-group">
-                <label>Due Date</label>
-                <input type="datetime-local" id="assign_due" required>
+                <label class="premium-label">Attachments</label>
+                <div class="file-upload-wrapper">
+                    <input type="file" id="assign_files" multiple onchange="handleFileSelect(this)">
+                    <div class="file-upload-content">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                            <polyline points="17 8 12 3 7 8"></polyline>
+                            <line x1="12" y1="3" x2="12" y2="15"></line>
+                        </svg>
+                        <span style="font-weight: 600; color: #0c1524;">Click to upload</span>
+                        <span style="font-size: 0.85rem;">or drag and drop files here</span>
+                    </div>
+                </div>
+                <div id="file_previews" style="margin-top: 1rem; display: flex; flex-direction: column; gap: 0.5rem;">
+                </div>
             </div>
-            <div class="form-group">
-                <label>Attachments</label>
-                <input type="file" id="assign_files" multiple onchange="handleFileSelect(this)">
-                <div id="file_previews" style="margin-top: 0.5rem; display: flex; flex-wrap: wrap; gap: 0.5rem;"></div>
-            </div>
-            <div style="display: flex; gap: 1rem; justify-content: flex-end; margin-top: 1.5rem;">
-                <button type="button" class="btn" onclick="hideModal('createAssignmentModal')">Cancel</button>
-                <button type="submit" class="btn btn-primary">Assign</button>
+            <div style="display: flex; gap: 1rem; justify-content: flex-end; margin-top: 2.5rem;">
+                <button type="button" class="btn"
+                    style="background: #f1f3f4; color: #5f6368; font-weight: 700; border-radius: 12px; padding: 0.85rem 1.5rem;"
+                    onclick="hideModal('createAssignmentModal')">Cancel</button>
+                <button type="submit" class="btn-premium"
+                    style="border-radius: 12px; padding: 0.85rem 2rem;">Assign</button>
             </div>
         </form>
     </div>
@@ -102,7 +154,10 @@
 
 {% block extra_scripts %}
 <script>
-    function showModal(id) { document.getElementById(id).style.display = 'block'; }
+    function showModal(id) {
+        const modal = document.getElementById(id);
+        modal.style.display = 'flex';
+    }
     function hideModal(id) { document.getElementById(id).style.display = 'none'; }
 
     function toggleAssignment(id) {

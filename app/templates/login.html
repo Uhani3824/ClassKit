@@ -4,22 +4,56 @@
 
 {% block content %}
 <div class="auth-wrapper">
-    <div class="card auth-form animate-fade">
-        <h2 style="margin-bottom: 2rem; text-align: center;">Welcome Back</h2>
+    <div class="card auth-form auth-form-premium animate-fade">
+        <div class="auth-header">
+            <a href="/" class="back-link">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="15 18 9 12 15 6"></polyline>
+                </svg>
+            </a>
+            <h1>Welcome Back</h1>
+            <p>Enter your credentials to access your account</p>
+        </div>
+
         <form id="login-form">
             <div class="form-group">
-                <label>Email Address</label>
-                <input type="email" id="username" required placeholder="john@example.com">
+                <label class="form-label-caps">Email Address</label>
+                <div class="input-with-icon">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                        <polyline points="22,6 12,13 2,6"></polyline>
+                    </svg>
+                    <input type="email" id="username" required placeholder="name@email.com">
+                </div>
             </div>
+
             <div class="form-group">
-                <label>Password</label>
-                <input type="password" id="password" required placeholder="••••••••">
+                <label class="form-label-caps">Password</label>
+                <div class="input-with-icon">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                        <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                    </svg>
+                    <input type="password" id="password" required placeholder="••••••••">
+                </div>
             </div>
-            <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1rem;">Log In</button>
+
+            <button type="submit" class="btn btn-join">
+                Sign In
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                    <polyline points="12 5 19 12 12 19"></polyline>
+                </svg>
+            </button>
         </form>
-        <p style="margin-top: 1.5rem; text-align: center; font-size: 0.9rem; color: var(--text-secondary);">
-            New to Class-Kit? <a href="/register" style="color: var(--primary-color);">Create an account</a>
-        </p>
+
+        <div class="auth-footer">
+            New to Class-Kit? <a href="/register">Create an account</a>
+        </div>
     </div>
 </div>
 {% endblock %}
@@ -40,7 +74,6 @@
         if (response.ok) {
             const data = await response.json();
             localStorage.setItem('token', data.access_token);
-            // Store cookie for templates to use (simple version)
             document.cookie = `access_token=${data.access_token}; path=/`;
             window.location.href = '/dashboard';
         } else {

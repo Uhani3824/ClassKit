@@ -3,14 +3,23 @@
 {% block title %}Dashboard - Class-Kit{% endblock %}
 
 {% block content %}
-<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
-    <h1>My Classes</h1>
-    {% if user.role == "teacher" %}
-    <button class="btn btn-primary" onclick="showModal('createCourseModal')">Create Class</button>
-    {% else %}
-    <button class="btn btn-primary" onclick="showModal('joinCourseModal')">Join Class</button>
+<div class="dashboard-header">
+    <div class="dashboard-header-text">
+        <h1>My Classes</h1>
+        <p>Manage your courses and keep track of assignments.</p>
+    </div>
+    {% if courses %}
+    <div class="dashboard-actions">
+        {% if user.role == "teacher" %}
+        <button class="btn btn-primary" onclick="showModal('createCourseModal')">Create Class</button>
+        {% else %}
+        <button class="btn btn-primary" onclick="showModal('joinCourseModal')">Join Class</button>
+        {% endif %}
+    </div>
     {% endif %}
 </div>
+
+{% if courses %}
 
 <div class="grid">
     {% for course in courses %}
@@ -31,6 +40,43 @@
     </a>
     {% endfor %}
 </div>
+{% else %}
+<div class="empty-state animate-fade">
+    <div class="empty-state-icon">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+        </svg>
+    </div>
+
+    {% if user.role == "teacher" %}
+    <h2>You haven't created any classes yet</h2>
+    <p>Start by creating your first class to share materials and assignments with your students.</p>
+    <button class="btn btn-premium" onclick="showModal('createCourseModal')">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <line x1="12" y1="5" x2="12" y2="19"></line>
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+        </svg>
+        Create a class
+    </button>
+    {% else %}
+    <h2>You haven't joined any classes yet</h2>
+    <p>Ask your teacher for a class code to join your first class and see materials and assignments.</p>
+    <button class="btn btn-premium" onclick="showModal('joinCourseModal')">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+            <circle cx="8.5" cy="7" r="4"></circle>
+            <line x1="20" y1="8" x2="20" y2="14"></line>
+            <line x1="17" y1="11" x2="23" y2="11"></line>
+        </svg>
+        Join a class
+    </button>
+    {% endif %}
+</div>
+{% endif %}
 
 <!-- Create Course Modal -->
 <div id="createCourseModal" class="modal"

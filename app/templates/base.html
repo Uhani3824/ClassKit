@@ -44,9 +44,6 @@
                     style="display: none; position: absolute; top: -5px; right: -5px; background: red; color: white; border-radius: 50%; width: 15px; height: 15px; font-size: 10px; align-items: center; justify-content: center;"></span>
                 <div id="notif-dropdown"
                     style="display: none; position: absolute; top: 30px; right: 0; width: 300px; background: white; box-shadow: var(--shadow); border-radius: var(--radius); z-index: 3000; max-height: 400px; overflow-y: auto; padding: 1rem;">
-                    <h4
-                        style="margin-bottom: 0.5rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem;">
-                        Notifications</h4>
                     <div id="notif-list" style="font-size: 0.9rem;"></div>
                 </div>
             </div>
@@ -216,9 +213,9 @@
 
                         if (currentCount > 0) {
                             list.innerHTML = `
-                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
-                                    <span style="font-weight: 600;">Notifications</span>
-                                    <button onclick="event.stopPropagation(); clearAllNotifications()" style="background: none; border: none; color: var(--primary-color); cursor: pointer; font-size: 0.85rem; padding: 0.25rem 0.5rem;">Clear All</button>
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem;">
+                                    <span style="font-weight: 800; color: #0c1524; font-size: 1rem;">Notifications</span>
+                                    <button onclick="event.stopPropagation(); clearAllNotifications()" style="background: none; border: none; color: var(--primary-color); cursor: pointer; font-size: 0.85rem; padding: 0.25rem 0.5rem; font-weight: 600;">Clear All</button>
                                 </div>
                             ` + notifs.map(n => {
                                 // Determine the URL based on notification type and metadata

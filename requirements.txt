@@ -15,3 +15,5 @@ aiofiles
 python-dotenv
 pytest
 httpx
+pyasyncore
+email-validator

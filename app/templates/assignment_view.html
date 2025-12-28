@@ -28,7 +28,9 @@
             </div>
         </div>
         <hr style="border: none; border-top: 1px solid var(--border-color); margin-bottom: 1.5rem;">
-        <div style="line-height: 1.6;">{{ assignment.description }}</div>
+        {% if assignment.description %}
+        <div style="line-height: 1.6; margin-bottom: 2rem;">{{ assignment.description }}</div>
+        {% endif %}
 
         {% if assignment.attachments %}
         <div style="margin-top: 2rem;">
@@ -66,8 +68,19 @@
         <div class="card glass animate-fade">
             <form id="submitForm" style="margin-top: 1.5rem;">
                 <div class="form-group">
-                    <label>Attachments</label>
-                    <input type="file" id="sub_files" multiple onchange="handleFileSelect(this)">
+                    <label class="premium-label">Submission Attachments</label>
+                    <div class="file-upload-wrapper" style="padding: 1rem; border-radius: 12px;">
+                        <input type="file" id="sub_files" multiple onchange="handleFileSelect(this)">
+                        <div class="file-upload-content" style="gap: 0.25rem;">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                <polyline points="17 8 12 3 7 8"></polyline>
+                                <line x1="12" y1="3" x2="12" y2="15"></line>
+                            </svg>
+                            <span style="font-weight: 600; color: #0c1524; font-size: 0.9rem;">Add files</span>
+                        </div>
+                    </div>
                     <div id="file_previews"
                         style="margin-top: 1rem; display: flex; flex-direction: column; gap: 0.5rem;"></div>
                     <div id="attachment_counter"
